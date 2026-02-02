@@ -38,6 +38,9 @@ survival:
 performance:
   # Interval ukládání rozpracovaných map (v sekundách)
   autosave-interval: 30
+  # Počet kroků historie pro funkci UNDO (paměťově náročné!)
+  # 50 kroků = cca 0.8 MB RAM na jeden aktivní obraz.
+  undo-steps: 50
 
 # --- VZHLED (Visuals) ---
 visuals:
@@ -80,7 +83,7 @@ messages:
   pipette-fail: "&cTuto barvu nemáš v inventáři!"
   canvas-empty: "&7Prázdné plátno"
 
-  # Undo & Copy (NOVÉ)
+  # Undo & Copy
   undo-success: "&aVrátil jsi poslední tah štětcem."
   undo-fail: "&cNelze vrátit zpět (žádná historie nebo chyba)."
   copy-success: "&aObraz byl zkopírován do tvého inventáře."

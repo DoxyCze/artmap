@@ -7,6 +7,7 @@ import org.vyloterra.commands.ArtCommand;
 public class ArtMapPlugin extends JavaPlugin {
 
     private static ArtMapPlugin instance;
+    private PaintingManager paintingManager; // NOVÉ
     private ArtListener artListener;
     private ArtProtocol artProtocol;
 
@@ -17,40 +18,44 @@ public class ArtMapPlugin extends JavaPlugin {
         // 1. Config
         saveDefaultConfig();
 
-        // 2. Registrace Listeneru (Logika hry, Undo, Malování)
-        this.artListener = new ArtListener(this);
+        // 2. Inicializace Manažera (TOTO JE KLÍČOVÉ)
+        // Musí být vytvořen před Listenerem a Commandy
+        this.paintingManager = new PaintingManager(this);
+
+        // 3. Registrace Listeneru
+        // Předáváme mu instanci manažera
+        this.artListener = new ArtListener(this, paintingManager);
         getServer().getPluginManager().registerEvents(artListener, this);
 
-        // 3. ProtocolLib (Packet Interception - Plynulé malování)
+        // 4. ProtocolLib
         if (getServer().getPluginManager().isPluginEnabled("ProtocolLib")) {
-            this.artProtocol = new ArtProtocol(this, artListener);
+            // I Protocol potřebuje vědět o manažerovi
+            this.artProtocol = new ArtProtocol(this, paintingManager);
             this.artProtocol.register();
-            getLogger().info("ProtocolLib nalezen! Plynulé malování aktivováno. (Anti-Break ochrana zapnuta)");
+            getLogger().info("ProtocolLib nalezen! Plynulé malování aktivováno.");
         } else {
-            getLogger().severe("CHYBA: ProtocolLib nebyl nalezen! Plugin ArtMap nemůže fungovat správně.");
-            getLogger().severe("Prosím stáhni a nainstaluj ProtocolLib.");
+            getLogger().severe("CHYBA: ProtocolLib nebyl nalezen!");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
 
-        // 4. Příkazy (Name, Delete, Undo, Copy...)
+        // 5. Příkazy
         PluginCommand cmd = getCommand("artmap");
         if (cmd != null) {
-            // ZDE BYLA CHYBA: Musíme předat i 'artListener', aby fungovalo Undo!
-            ArtCommand executor = new ArtCommand(this, artListener);
+            // I Command potřebuje manažera pro UNDO a RELOAD
+            ArtCommand executor = new ArtCommand(this, paintingManager);
             cmd.setExecutor(executor);
             cmd.setTabCompleter(executor);
         }
 
-        getLogger().info("ArtMap úspěšně načten! Malířská plátna připravena.");
+        getLogger().info("ArtMap úspěšně načten!");
     }
 
     @Override
     public void onDisable() {
-        if (artListener != null) {
-            // Vynutíme uložení všech rozpracovaných map
+        if (paintingManager != null) {
             getLogger().info("Ukládám rozpracované obrazy...");
-            artListener.forceSaveAll();
+            paintingManager.forceSaveAll(); // Ukládání řeší manažer
         }
         getLogger().info("ArtMap bezpečně ukončen.");
     }
