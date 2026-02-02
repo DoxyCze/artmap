@@ -1,0 +1,32 @@
+name: ArtMap
+version: 1.0
+main: org.vyloterra.ArtMapPlugin
+api-version: 1.21
+depend: [ProtocolLib]
+authors: [Vyloterra]
+
+commands:
+  artmap:
+    description: Hlavní příkaz pro ArtMap
+    usage: /artmap <name|undo|copy|delete|purge>
+    permission: artmap.paint
+
+permissions:
+  artmap.paint:
+    description: Umožňuje malovat a používat základní příkazy (name, undo, copy)
+    default: true
+  artmap.brush.medium:
+    description: Povolí střední velikost štětce
+    default: true
+  artmap.brush.large:
+    description: Povolí velkou velikost štětce (VIP)
+    default: op
+  artmap.admin:
+    description: Admin práva (mazání cizího, purge, ignorování regionů)
+    default: op
+  artmap.bypass.cooldown:
+    description: Hráč nemusí čekat na cooldown u nástrojů (VIP)
+    default: op
+  artmap.bypass.worlds:
+    description: Umožní malovat i ve světech, které nejsou na whitelistu
+    default: op

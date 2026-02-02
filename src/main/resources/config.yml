@@ -1,0 +1,110 @@
+# --- ArtMap Konfigurace ---
+
+# Ve kterých světech je plugin povolen? (Prázdné = všude)
+allowed-worlds:
+  - "world"
+  - "creative"
+  - "art_gallery"
+
+# --- OMEZENÍ A ČASOVAČE (Cooldowns) ---
+# Ochrana proti spamu nástroji (čas v sekundách).
+cooldowns:
+  pipette: 1.0
+  reset: 10.0
+
+# Maximální počet hráčů, kteří mohou malovat současně
+max-painters: 5
+
+# Jak dlouho (v sekundách) drží slot pro hráče, který přestal malovat
+session-timeout-seconds: 15
+
+# --- HRATELNOST (Gameplay) ---
+gameplay:
+  # Dosah malování (v blocích)
+  paint-distance: 5.0
+  # Povolit nástroje?
+  allow-pipette: true
+  allow-eraser: true
+  allow-reset: true
+
+# --- SURVIVAL (Spotřeba) ---
+survival:
+  # Mají se hráčům v Survivalu spotřebovávat barviva?
+  consume-dyes: true
+  # Šance na spotřebu (1 ku X). 20 = barva zmizí průměrně po 20 pixelech.
+  consumption-chance: 20
+
+# --- VÝKON (Performance) ---
+performance:
+  # Interval ukládání rozpracovaných map (v sekundách)
+  autosave-interval: 30
+
+# --- VZHLED (Visuals) ---
+visuals:
+  # Povolit částicové efekty? (Vypni pro zvýšení FPS klientů)
+  enable-particles: true
+  # Povolit animaci máchání rukou?
+  enable-hand-swing: true
+
+# Velikosti štětců (poloměr)
+brush-sizes:
+  medium: 2
+  large: 5
+
+# Zvuky (Spigot Sound API)
+sounds:
+  paint: "BLOCK_POINTED_DRIPSTONE_LAND"
+  change-brush: "UI_BUTTON_CLICK"
+  pipette: "ENTITY_CHICKEN_EGG"
+  error: "BLOCK_NOTE_BLOCK_BASS"
+  created: "UI_CARTOGRAPHY_TABLE_TAKE_RESULT"
+  deleted: "BLOCK_BAMBOO_WOOD_BREAK"
+
+# --- LOKALIZACE (Zprávy) ---
+messages:
+  prefix: "&6[ArtMap] &f"
+  no-permission: "&cNa tohle nemáš dostatečná práva."
+  only-players: "&cTento příkaz mohou použít jen hráči."
+  tool-disabled: "&cTento nástroj je na serveru zakázán."
+  world-disabled: "&cZde nemůžeš malovat."
+  cooldown-wait: "&cMusíš počkat ještě {val}s."
+
+  # Nástroje
+  brush-size: "&fVelikost štětce: {val}"
+  brush-names:
+    small: "&aZákladní tužka"
+    medium: "&eStřední štětec"
+    large: "&6Velký štětec"
+  pipette-picked: "&bKapátko: &fVybrána barva {val}"
+  pipette-inv: "&bKapátko: &fVybráno z inventáře"
+  pipette-fail: "&cTuto barvu nemáš v inventáři!"
+  canvas-empty: "&7Prázdné plátno"
+
+  # Undo & Copy (NOVÉ)
+  undo-success: "&aVrátil jsi poslední tah štětcem."
+  undo-fail: "&cNelze vrátit zpět (žádná historie nebo chyba)."
+  copy-success: "&aObraz byl zkopírován do tvého inventáře."
+  copy-fail: "&cMusíš se dívat na platný obraz."
+
+  # Příkazy
+  look-at-frame: "&cMusíš se dívat na obraz (Item Frame)."
+  not-a-map: "&cV rámečku není mapa."
+  already-locked: "&cTento obraz už je podepsaný a uzamčený!"
+  saved: "&aObraz byl úspěšně podepsán jako '&e{val}&a' a uzamčen."
+  map-lore:
+    - "&7Autor: &e{author}"
+    - "&7Vytvořeno: &f{date}"
+    - ""
+    - "&7(Uzamčené dílo)"
+  deleted: "&aObraz (ID: {val}) byl úspěšně smazán."
+  delete-console: "&cZ konzole musíš zadat ID: /artmap delete <id>"
+  purge-start: "&eSpouštím čištění starých map..."
+  purge-done: "&aÚklid hotov! Smazáno {val} souborů."
+  invalid-number: "&cMusíš zadat platné číslo."
+
+  help:
+    - "&e--- ArtMap Nápověda ---"
+    - "&6/artmap name <název> &7- Podepíše a uzamkne dílo."
+    - "&6/artmap undo &7- Vrátí zpět poslední tah."
+    - "&6/artmap copy &7- Zkopíruje obraz do inventáře."
+    - "&6/artmap delete &7- Smaže dílo (pohledem)."
