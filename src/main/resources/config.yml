@@ -1,5 +1,21 @@
 # --- ArtMap Konfigurace ---
 
+# Formát data v popisku mapy
+date-format: "dd.MM.yyyy HH:mm"
+
+# --- RECEPT NA PLÁTNO ---
+canvas-recipe:
+  enabled: true
+  pattern:
+    - "+++"
+    - "+*+"
+    - "+++"
+  ingredients:
+    "+": "minecraft:ITEM_FRAME"
+    "*": "minecraft:MAP"
+    # Příklad pro externí itemy:
+    # "*": "nexo:blue_canvas"
+
 # Ve kterých světech je plugin povolen? (Prázdné = všude)
 allowed-worlds:
   - "world"
@@ -7,10 +23,10 @@ allowed-worlds:
   - "art_gallery"
 
 # --- OMEZENÍ A ČASOVAČE (Cooldowns) ---
-# Ochrana proti spamu nástroji (čas v sekundách).
 cooldowns:
   pipette: 1.0
   reset: 10.0
+  fill: 2.0  # Cooldown pro kyblík
 
 # Maximální počet hráčů, kteří mohou malovat současně
 max-painters: 5
@@ -26,6 +42,8 @@ gameplay:
   allow-pipette: true
   allow-eraser: true
   allow-reset: true
+  allow-fill: true       # Povolit kyblík s barvou
+  allow-glow: true       # Povolit Glow Ink Sac
 
 # --- SURVIVAL (Spotřeba) ---
 survival:
@@ -38,16 +56,23 @@ survival:
 performance:
   # Interval ukládání rozpracovaných map (v sekundách)
   autosave-interval: 30
-  # Počet kroků historie pro funkci UNDO (paměťově náročné!)
-  # 50 kroků = cca 0.8 MB RAM na jeden aktivní obraz.
+  # Počet kroků historie pro funkci UNDO
   undo-steps: 50
 
 # --- VZHLED (Visuals) ---
 visuals:
-  # Povolit částicové efekty? (Vypni pro zvýšení FPS klientů)
+  # Povolit částicové efekty?
   enable-particles: true
   # Povolit animaci máchání rukou?
   enable-hand-swing: true
+
+modes:
+  freehand: "&fVolná ruka"
+  spray: "&fSprej"
+  line: "&fPřímka"
+  square: "&fObdélník"
+  circle: "&fKruh"
+  unknown: "&cNeplatný režim"
 
 # Velikosti štětců (poloměr)
 brush-sizes:
@@ -67,10 +92,12 @@ sounds:
 messages:
   prefix: "&6[ArtMap] &f"
   no-permission: "&cNa tohle nemáš dostatečná práva."
+  region-disabled: "&cZde nemáš právo malovat."
   only-players: "&cTento příkaz mohou použít jen hráči."
   tool-disabled: "&cTento nástroj je na serveru zakázán."
   world-disabled: "&cZde nemůžeš malovat."
   cooldown-wait: "&cMusíš počkat ještě {val}s."
+  need-empty-map: "&cK vytvoření kopie potřebuješ &ePrázdnou mapu&c v inventáři!"
 
   # Nástroje
   brush-size: "&fVelikost štětce: {val}"
@@ -88,6 +115,15 @@ messages:
   undo-fail: "&cNelze vrátit zpět (žádná historie nebo chyba)."
   copy-success: "&aObraz byl zkopírován do tvého inventáře."
   copy-fail: "&cMusíš se dívat na platný obraz."
+
+  # Inspect (Inspekce)
+  inspect:
+    header: "&8&m------------------------"
+    title: "&6&l INSPEKCE OBRAZU (ID: {id})"
+    author: "&7 Původní autor: &f{val}"
+    editor: "&7 Poslední úprava: &e{val}"
+    date: "&7 Datum vzniku: &b{val}"
+    footer: "&8&m------------------------"
 
   # Příkazy
   look-at-frame: "&cMusíš se dívat na obraz (Item Frame)."
@@ -110,4 +146,5 @@ messages:
     - "&6/artmap name <název> &7- Podepíše a uzamkne dílo."
     - "&6/artmap undo &7- Vrátí zpět poslední tah."
     - "&6/artmap copy &7- Zkopíruje obraz do inventáře."
+    - "&6/artmap inspect &7- Zobrazí informace o autorovi."
     - "&6/artmap delete &7- Smaže dílo (pohledem)."
