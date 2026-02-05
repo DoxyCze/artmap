@@ -19,7 +19,7 @@ import org.vyloterra.util.ColorUtil;
 public class ArtProtocol {
 
     private final ArtMapPlugin plugin;
-    private final PaintingManager paintingManager; // ZMĚNA: Manažer
+    private final PaintingManager paintingManager;
     private final NamespacedKey keyLocked;
 
     public ArtProtocol(ArtMapPlugin plugin, PaintingManager paintingManager) {
@@ -33,6 +33,8 @@ public class ArtProtocol {
             @Override
             public void onPacketReceiving(PacketEvent event) {
                 Player player = event.getPlayer();
+
+                // Rychlá kontrola itemů (může běžet asynchronně)
                 ItemStack hand = player.getInventory().getItemInMainHand();
                 ItemStack offHand = player.getInventory().getItemInOffHand();
 
@@ -41,31 +43,39 @@ public class ArtProtocol {
                         hand.getType() == Material.SPONGE ||
                         hand.getType() == Material.WET_SPONGE;
 
+                // Pokud hráč nemá v ruce nic relevantního nebo nemá permisi, ignorujeme
                 if ((!hasDye && !isTool) || !player.hasPermission("artmap.paint")) {
                     return;
                 }
 
+                // Získáme typ akce (kliknutí, útok)
                 EnumWrappers.EntityUseAction action = event.getPacket().getEntityUseActions().readSafely(0);
 
-                if (action == EnumWrappers.EntityUseAction.ATTACK) {
-                    event.setCancelled(true);
-                    return;
-                }
-
+                // Okamžitě zrušíme event na úrovni paketu, aby nedošlo k vanillové interakci (otáčení framu, ničení)
                 event.setCancelled(true);
+
+                // Přečteme ID entity z paketu
                 int entityId = event.getPacket().getIntegers().read(0);
 
+                // --- PŘESUN NA HLAVNÍ VLÁKNO SERVERU ---
+                // Bukkit API (jako player.getWorld(), getEntityFromID, volání eventů)
+                // NESMÍ být voláno z asynchronního vlákna ProtocolLibu.
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     Entity entity = ProtocolLibrary.getProtocolManager().getEntityFromID(player.getWorld(), entityId);
 
                     if (entity instanceof ItemFrame frame) {
+                        // Kontrola pro ostatní pluginy (např. WorldGuard)
                         org.bukkit.event.player.PlayerInteractEntityEvent checkEvent = new org.bukkit.event.player.PlayerInteractEntityEvent(player, frame);
                         Bukkit.getPluginManager().callEvent(checkEvent);
+
+                        // Pokud nějaký plugin interakci zakázal, končíme
                         if (checkEvent.isCancelled()) return;
 
                         ItemStack item = frame.getItem();
+                        // Kontrola, zda je ve framu mapa
                         if (item.getType() == Material.FILLED_MAP || item.getType() == Material.MAP) {
 
+                            // Kontrola zamčené mapy
                             if (item.hasItemMeta()) {
                                 ItemMeta meta = item.getItemMeta();
                                 if (meta.getPersistentDataContainer().has(keyLocked, PersistentDataType.BYTE)) {
@@ -73,7 +83,7 @@ public class ArtProtocol {
                                 }
                             }
 
-                            // ZMĚNA: Voláme manažera místo listeneru
+                            // Vše v pořádku, předáváme logiku manažerovi
                             paintingManager.updatePaintingState(player, frame);
                         }
                     }
