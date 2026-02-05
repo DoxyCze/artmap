@@ -4,8 +4,8 @@ import org.vyloterra.ArtMapPlugin;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -18,54 +18,59 @@ public class DataManager {
     /**
      * Asynchronní uložení mapy (používá se během běhu serveru).
      * @param pixelsSnapshot Musí být KOPIE dat, nikoliv živé pole!
+     * @param callback Volitelná akce po dokončení (true = úspěch, false = chyba). Může být null.
      */
-    public static void saveMapAsync(int mapId, byte[][] pixelsSnapshot, File dataFolder) {
-        CompletableFuture.runAsync(() -> saveMap(mapId, pixelsSnapshot, dataFolder))
-                .exceptionally(ex -> {
-                    ArtMapPlugin.getInstance().getLogger().log(Level.SEVERE,
-                            "Chyba při asynchronním ukládání mapy " + mapId, ex);
-                    return null;
-                });
+    public static void saveMapAsync(int mapId, byte[][] pixelsSnapshot, File dataFolder, Consumer<Boolean> callback) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                // Pokus o uložení
+                saveMap(mapId, pixelsSnapshot, dataFolder);
+                // Pokud nenastala chyba a máme callback, nahlásíme úspěch
+                if (callback != null) callback.accept(true);
+            } catch (Exception e) {
+                // Pokud nastala chyba, vyhodíme ji, aby ji chytil .exceptionally()
+                throw new RuntimeException(e);
+            }
+        }).exceptionally(ex -> {
+            // Logování chyby do konzole
+            ArtMapPlugin.getInstance().getLogger().log(Level.SEVERE,
+                    "Chyba při asynchronním ukládání mapy " + mapId, ex);
+
+            // Nahlášení neúspěchu callbacku
+            if (callback != null) callback.accept(false);
+            return null;
+        });
     }
 
     /**
      * Synchronní uložení (používá se při vypínání serveru).
      */
     public static void saveMapSync(int mapId, byte[][] pixelsSnapshot, File dataFolder) {
-        saveMap(mapId, pixelsSnapshot, dataFolder);
+        try {
+            saveMap(mapId, pixelsSnapshot, dataFolder);
+        } catch (IOException e) {
+            ArtMapPlugin.getInstance().getLogger().log(Level.SEVERE, "Chyba při synchronním ukládání mapy " + mapId, e);
+        }
     }
 
-    // Interní metoda pro bezpečné uložení
-    private static void saveMap(int mapId, byte[][] pixels, File dataFolder) {
-        if (!dataFolder.exists() && !dataFolder.mkdirs()) return;
+    /**
+     * Interní metoda pro zápis dat do souboru (GZIP komprese).
+     */
+    private static void saveMap(int mapId, byte[][] pixels, File dataFolder) throws IOException {
+        if (!dataFolder.exists()) dataFolder.mkdirs();
 
-        File finalFile = new File(dataFolder, "map_" + mapId + FILE_EXTENSION);
-        File tempFile = new File(dataFolder, "map_" + mapId + ".tmp");
+        File file = new File(dataFolder, "map_" + mapId + FILE_EXTENSION);
 
-        try {
-            // 1. Zápis do dočasného souboru (GZIP komprese)
-            try (DataOutputStream out = new DataOutputStream(new GZIPOutputStream(new FileOutputStream(tempFile)))) {
-                for (int x = 0; x < MAP_SIZE; x++) {
-                    out.write(pixels[x]);
-                }
+        try (DataOutputStream out = new DataOutputStream(new GZIPOutputStream(new FileOutputStream(file)))) {
+            for (int x = 0; x < MAP_SIZE; x++) {
+                out.write(pixels[x]);
             }
-
-            // 2. Atomický přesun (přepíše starý soubor jen pokud je nový OK)
-            // Toto zabrání poškození dat při pádu serveru během ukládání.
-            Files.move(tempFile.toPath(), finalFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-
-        } catch (IOException e) {
-            ArtMapPlugin.getInstance().getLogger().log(Level.SEVERE, "Chyba IO při ukládání mapy " + mapId, e);
         }
     }
 
     public static byte[][] loadMap(int mapId, File dataFolder) {
         File file = new File(dataFolder, "map_" + mapId + FILE_EXTENSION);
         if (!file.exists()) return null;
-
-        // Aktualizace data úpravy (aby purge system věděl, že je mapa aktivní)
-        // Ignorujeme výsledek, není kritické
-        file.setLastModified(System.currentTimeMillis());
 
         byte[][] pixels = new byte[MAP_SIZE][MAP_SIZE];
 
