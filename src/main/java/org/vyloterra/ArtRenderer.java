@@ -11,50 +11,63 @@ import java.util.Arrays;
 
 public class ArtRenderer extends MapRenderer {
 
-    // Hlavní paměť pixelů (128x128)
     private final byte[][] pixels = new byte[128][128];
     private final Object lock = new Object();
-
-    // OPTIMALIZACE: Místo HashSet používáme boolean pole.
-    // Index je (x * 128 + y). Je to mnohem rychlejší a nevytváří to odpad pro Garbage Collector.
     private final boolean[] dirtyPixels = new boolean[128 * 128];
-
-    // Pomocné proměnné pro ohraničení změny (volitelné, pro ještě vyšší rychlost vykreslování)
-    private int minDirtyX = 128, maxDirtyX = -1, minDirtyY = 128, maxDirtyY = -1;
 
     private volatile boolean needsUpdate = true;
     private boolean fullRenderNeeded = true;
 
     public ArtRenderer(int mapId, File dataFolder) {
-        // Načteme data z disku při startu
         byte[][] loaded = DataManager.loadMap(mapId, dataFolder);
         if (loaded != null) {
             for (int x = 0; x < 128; x++) {
-                System.arraycopy(loaded[x], 0, this.pixels[x], 0, 128);
+                System.arraycopy(loaded[x], 0, pixels[x], 0, 128);
             }
-        } else {
-            for (byte[] row : pixels) Arrays.fill(row, (byte) 0);
         }
     }
 
-    /**
-     * Metoda pro kreslení jednoho bodu.
-     */
+    // --- METODY PRO KYBLÍK A ŠTĚTEC ---
+    public byte getPixel(int x, int y) {
+        if (x < 0 || x >= 128 || y < 0 || y >= 128) return 0;
+        synchronized (lock) {
+            return pixels[x][y];
+        }
+    }
+
+    public void drawPixel(int x, int y, byte color) {
+        if (x < 0 || x >= 128 || y < 0 || y >= 128) return;
+        synchronized (lock) {
+            if (pixels[x][y] != color) {
+                pixels[x][y] = color;
+                dirtyPixels[x * 128 + y] = true;
+                needsUpdate = true;
+            }
+        }
+    }
+
     public void draw(int x, int y, byte color) {
-        if (x >= 0 && x < 128 && y >= 0 && y < 128) {
-            synchronized (lock) {
-                if (pixels[x][y] != color) {
-                    pixels[x][y] = color;
-                    // Zde jen přepneme boolean na true - žádné vytváření objektů!
-                    dirtyPixels[(x << 7) | y] = true;
-                    needsUpdate = true;
-                }
+        drawPixel(x, y, color);
+    }
+
+    // --- METODY PRO UNDO A MAZÁNÍ (OPRAVENO) ---
+
+    /**
+     * Načte celé pole pixelů (používá se pro UNDO).
+     */
+    public void loadPixels(byte[][] data) {
+        if (data.length != 128) return;
+        synchronized (lock) {
+            for (int x = 0; x < 128; x++) {
+                System.arraycopy(data[x], 0, pixels[x], 0, 128);
             }
+            fullRenderNeeded = true;
+            needsUpdate = true;
         }
     }
 
     /**
-     * Rychlé smazání celé mapy.
+     * Vymaže plátno konkrétní barvou.
      */
     public void clear(byte color) {
         synchronized (lock) {
@@ -63,28 +76,23 @@ public class ArtRenderer extends MapRenderer {
             }
             fullRenderNeeded = true;
             needsUpdate = true;
-            // Reset dirty pole
             Arrays.fill(dirtyPixels, false);
         }
     }
 
-    public void loadPixels(byte[][] newPixels) {
-        synchronized (lock) {
-            for (int x = 0; x < 128; x++) {
-                System.arraycopy(newPixels[x], 0, pixels[x], 0, 128);
-            }
-            fullRenderNeeded = true;
-            needsUpdate = true;
-            Arrays.fill(dirtyPixels, false);
-        }
+    /**
+     * Vymaže plátno (průhledná/černá).
+     */
+    public void clear() {
+        clear((byte) 0);
     }
 
+    // V ArtRenderer.java
     public byte[][] getPixelsSnapshot() {
+        // Vytvoří hlubokou kopii pole (Deep Copy)
         byte[][] copy = new byte[128][128];
-        synchronized (lock) {
-            for (int x = 0; x < 128; x++) {
-                System.arraycopy(pixels[x], 0, copy[x], 0, 128);
-            }
+        for (int i = 0; i < 128; i++) {
+            System.arraycopy(this.pixels[i], 0, copy[i], 0, 128);
         }
         return copy;
     }
@@ -102,13 +110,12 @@ public class ArtRenderer extends MapRenderer {
                 }
                 fullRenderNeeded = false;
             } else {
-                // Projdeme pole booleanů - je to extrémně rychlé
                 for (int i = 0; i < dirtyPixels.length; i++) {
                     if (dirtyPixels[i]) {
-                        int x = i >> 7;   // Bitový posun (děleno 128)
-                        int y = i & 0x7F; // Bitový AND (zbytek po dělení 128)
+                        int x = i >> 7;
+                        int y = i & 127;
                         canvas.setPixel(x, y, pixels[x][y]);
-                        dirtyPixels[i] = false; // Resetujeme příznak
+                        dirtyPixels[i] = false;
                     }
                 }
             }
