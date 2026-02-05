@@ -3,17 +3,18 @@ version: 1.0
 main: org.vyloterra.ArtMapPlugin
 api-version: 1.21
 depend: [ProtocolLib]
+softdepend: [WorldGuard, ItemsAdder, Oraxen, Nexo]
 authors: [Vyloterra]
 
 commands:
   artmap:
     description: Hlavní příkaz pro ArtMap
-    usage: /artmap <name|undo|copy|delete|purge>
+    usage: /artmap <name|undo|copy|delete|inspect|purge>
     permission: artmap.paint
 
 permissions:
   artmap.paint:
-    description: Umožňuje malovat a používat základní příkazy (name, undo, copy)
+    description: Umožňuje malovat a používat základní příkazy
     default: true
   artmap.brush.medium:
     description: Povolí střední velikost štětce
@@ -22,11 +23,14 @@ permissions:
     description: Povolí velkou velikost štětce (VIP)
     default: op
   artmap.admin:
-    description: Admin práva (mazání cizího, purge, ignorování regionů)
+    description: Admin práva (mazání cizího, purge, inspect)
     default: op
   artmap.bypass.cooldown:
     description: Hráč nemusí čekat na cooldown u nástrojů (VIP)
     default: op
   artmap.bypass.worlds:
     description: Umožní malovat i ve světech, které nejsou na whitelistu
+    default: op
+  artmap.admin.bypass-regions:
+    description: Umožní malovat v cizích WorldGuard regionech
     default: op
